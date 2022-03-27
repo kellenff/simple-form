@@ -1,1 +1,1 @@
-'*.ts': [eslint, tsc]
+'*.ts': [eslint, 'tsc --noEmit']
