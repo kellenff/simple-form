@@ -1,5 +1,5 @@
 {
-  "name": "simple-form",
+  "name": "@rakenodiax/simple-form",
   "version": "0.1.0",
   "packageManager": "yarn@3.2.0",
   "scripts": {
