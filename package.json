@@ -2,6 +2,10 @@
   "name": "@rakenodiax/simple-form",
   "version": "0.1.0",
   "packageManager": "yarn@3.2.0",
+  "files": [
+    "hooks.ts",
+    "index.ts"
+  ],
   "scripts": {
     "pre-commit": "run-p -l pre-commit:format pre-commit:lint",
     "pre-push": "run-p -l check:format check:lint check:types",
