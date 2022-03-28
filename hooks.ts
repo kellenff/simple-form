@@ -41,19 +41,38 @@ const isEvent = (v: unknown): v is ChangeEvent => {
   );
 };
 
+export type FieldValidator<F> = {
+  validate: (value: unknown, formData?: F) => boolean;
+  message?: string;
+};
+
+export type FormOpts<F extends FormData<unknown>> = {
+  validators?: Partial<Record<keyof F, FieldValidator<F>[]>>;
+};
+
 export type FieldOpts<
   F extends FormData<unknown>,
   K extends keyof F,
   V = ChangeEvent<HTMLInputElement>,
 > = {
-  validator?: {validate?: (value: F[K]) => boolean; message?: string};
   map?: (event: V) => F[K];
   muiHelpers?: ['error', 'helperText'];
 };
 
-export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<F> => {
+export const useForm = <F extends FormData<unknown>>(
+  initialValues: F,
+  options?: FormOpts<F>,
+): UseForm<F> => {
   const [formData, setFormData] = useState<F>(initialValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof F, string>>>({});
+  const errors: Partial<Record<keyof F, string | undefined>> = Object.entries(
+    options?.validators ?? {},
+  ).reduce((acc, [name, validators]) => {
+    const messages = validators?.flatMap(({validate, message}) =>
+      validate(formData[name], formData) ? [] : [message ?? `${name} is invalid`],
+    );
+
+    return {...acc, [name]: messages?.[0]};
+  }, {});
 
   const setValue = <K extends keyof F>(name: K, value: F[K]): void => {
     setFormData({...formData, [name]: value});
@@ -75,18 +94,11 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
         opts.map === void 0
           ? ((fieldValue as unknown as ChangeEvent<HTMLInputElement>).currentTarget.value as F[K])
           : opts.map(fieldValue);
-      const validationResult = opts.validator?.validate?.(value);
       setValue(name, value);
-      setErrors({
-        ...errors,
-        [name]:
-          validationResult === false ? opts.validator?.message ?? `${name} invalid` : undefined,
-      });
     },
     error: opts.muiHelpers?.includes('error') === true ? errors[name] !== void 0 : undefined,
     helperText: opts.muiHelpers?.includes('helperText') === true ? errors[name] : undefined,
   });
-
   const reset = (v?: F) => {
     setFormData(v ?? initialValues);
   };
