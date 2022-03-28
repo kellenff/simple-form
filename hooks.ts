@@ -1,14 +1,17 @@
-import {ChangeEvent, ChangeEventHandler, useState} from 'react';
+/*
+ * TODO: simplify custom onChange value generic logic
+ */
+import {ChangeEvent, useState} from 'react';
 
 export type UseForm<F extends Record<string, unknown>> = {
   formData: F;
   setValue: <K extends keyof F>(name: K, value: F[K]) => void;
-  field: <K extends keyof F>(
+  field: <K extends keyof F, V = ChangeEvent<HTMLInputElement>>(
     name: K,
-    opts?: FieldOpts<F, K>,
+    opts?: FieldOpts<F, K, V>,
   ) => {
     value: F[K];
-    onChange: ChangeEventHandler<HTMLInputElement>;
+    onChange: (value: V) => void;
   };
   errors: Partial<Record<keyof F, string>>;
   isValid: boolean;
@@ -16,9 +19,34 @@ export type UseForm<F extends Record<string, unknown>> = {
 
 interface FormData<V extends unknown> extends Record<string, V> {}
 
-export type FieldOpts<F extends FormData<unknown>, K extends keyof F> = {
+const isEvent = (v: unknown): v is ChangeEvent => {
+  if (
+    !(
+      v !== null &&
+      typeof v === 'object' &&
+      Object.prototype.hasOwnProperty.call(v, 'currentTarget')
+    )
+  ) {
+    return false;
+  }
+
+  const {currentTarget} = v as {currentTarget: unknown};
+
+  return (
+    currentTarget !== null &&
+    typeof currentTarget === 'object' &&
+    Object.prototype.hasOwnProperty.call(currentTarget, 'value') &&
+    typeof (currentTarget as {value: unknown}).value === 'string'
+  );
+};
+
+export type FieldOpts<
+  F extends FormData<unknown>,
+  K extends keyof F,
+  V = ChangeEvent<HTMLInputElement>,
+> = {
   validate?: {validator?: (value: F[K]) => boolean; message?: string};
-  map?: (event: ChangeEvent<HTMLInputElement>) => F[K];
+  map?: (event: V) => F[K];
 };
 
 export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<F> => {
@@ -29,11 +57,22 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
     setFormData({...formData, [name]: value});
   };
 
-  const field = <K extends keyof F>(name: K, opts: FieldOpts<F, K> = {}) => ({
+  const field = <K extends keyof F, V = ChangeEvent<HTMLInputElement>>(
+    name: K,
+    opts: FieldOpts<F, K, V> = {},
+  ) => ({
     name,
     value: formData[name],
-    onChange: (event: ChangeEvent<HTMLInputElement>) => {
-      const value = opts.map === void 0 ? (event.currentTarget.value as F[K]) : opts.map(event);
+    onChange: (fieldValue: V) => {
+      if (!isEvent(fieldValue) && opts.map === void 0) {
+        throw new TypeError(
+          'Non-event field handlers require a mapping from onChange value to form value',
+        );
+      }
+      const value =
+        opts.map === void 0
+          ? ((fieldValue as unknown as ChangeEvent<HTMLInputElement>).currentTarget.value as F[K])
+          : opts.map(fieldValue);
       const validationResult = opts.validate?.validator?.(value);
       setValue(name, value);
       setErrors({
