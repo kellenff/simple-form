@@ -15,6 +15,7 @@ export type UseForm<F extends Record<string, unknown>> = {
   };
   errors: Partial<Record<keyof F, string>>;
   isValid: boolean;
+  reset: (data?: F) => void;
 };
 
 interface FormData<V extends unknown> extends Record<string, V> {}
@@ -86,11 +87,16 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
     helperText: opts.muiHelpers?.includes('helperText') === true ? errors[name] : undefined,
   });
 
+  const reset = (v?: F) => {
+    setFormData(v ?? initialValues);
+  };
+
   return {
     formData,
     setValue,
     field,
     errors,
     isValid: !Object.values(errors).some((v) => v !== void 0),
+    reset,
   };
 };
