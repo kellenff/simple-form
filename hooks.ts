@@ -40,6 +40,10 @@ const isEvent = (v: unknown): v is ChangeEvent => {
   );
 };
 
+export type UseFormOpts<F extends FormData<unknown>> = {
+  validate?: (form: F) => Partial<Record<keyof F, string>>;
+};
+
 export type FieldOpts<
   F extends FormData<unknown>,
   K extends keyof F,
@@ -50,12 +54,29 @@ export type FieldOpts<
   muiHelpers?: ['error', 'helperText'];
 };
 
-export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<F> => {
+const initErrors = <F extends FormData<unknown>>(
+  initialValues: F,
+  options?: UseFormOpts<F>,
+): Partial<Record<keyof F, string>> => {
+  return options?.validate?.(initialValues) ?? {};
+};
+
+export const useForm = <F extends FormData<unknown>>(
+  initialValues: F,
+  options?: UseFormOpts<F>,
+): UseForm<F> => {
   const [formData, setFormData] = useState<F>(initialValues);
-  const [errors, setErrors] = useState<Partial<Record<keyof F, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof F, string>>>(
+    initErrors(initialValues, options),
+  );
 
   const setValue = <K extends keyof F>(name: K, value: F[K]): void => {
-    setFormData({...formData, [name]: value});
+    const newData = {...formData, [name]: value};
+    setFormData(newData);
+
+    if (typeof options?.validate === 'function') {
+      setErrors(options.validate(newData));
+    }
   };
 
   const field = <K extends keyof F, V = ChangeEvent<HTMLInputElement>>(
@@ -76,11 +97,11 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
           : opts.map(fieldValue);
       const validationResult = opts.validate?.validator?.(value);
       setValue(name, value);
-      setErrors({
-        ...errors,
+      setErrors((e) => ({
+        ...e,
         [name]:
           validationResult === false ? opts.validate?.message ?? `${name} invalid` : undefined,
-      });
+      }));
     },
     error: opts.muiHelpers?.includes('error') === true ? errors[name] !== void 0 : undefined,
     helperText: opts.muiHelpers?.includes('helperText') === true ? errors[name] : undefined,

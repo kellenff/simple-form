@@ -1,6 +1,6 @@
 {
   "name": "@rakenodiax/simple-form",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "packageManager": "yarn@3.2.0",
   "files": [
     "hooks.ts",
