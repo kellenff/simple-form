@@ -90,6 +90,6 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
     setValue,
     field,
     errors,
-    isValid: Object.keys(errors).length === 0,
+    isValid: !Object.values(errors).some((v) => v !== void 0),
   };
 };
