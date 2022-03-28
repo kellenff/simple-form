@@ -47,6 +47,7 @@ export type FieldOpts<
 > = {
   validate?: {validator?: (value: F[K]) => boolean; message?: string};
   map?: (event: V) => F[K];
+  muiHelpers?: ['error', 'helperText'];
 };
 
 export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<F> => {
@@ -81,8 +82,8 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
           validationResult === false ? opts.validate?.message ?? `${name} invalid` : undefined,
       });
     },
-    error: errors[name] !== void 0,
-    helperText: errors[name],
+    error: opts.muiHelpers?.includes('error') === true ? errors[name] !== void 0 : undefined,
+    helperText: opts.muiHelpers?.includes('helperText') === true ? errors[name] : undefined,
   });
 
   return {
