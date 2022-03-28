@@ -46,7 +46,7 @@ export type FieldOpts<
   K extends keyof F,
   V = ChangeEvent<HTMLInputElement>,
 > = {
-  validate?: {validator?: (value: F[K]) => boolean; message?: string};
+  validator?: {validate?: (value: F[K]) => boolean; message?: string};
   map?: (event: V) => F[K];
   muiHelpers?: ['error', 'helperText'];
 };
@@ -75,12 +75,12 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
         opts.map === void 0
           ? ((fieldValue as unknown as ChangeEvent<HTMLInputElement>).currentTarget.value as F[K])
           : opts.map(fieldValue);
-      const validationResult = opts.validate?.validator?.(value);
+      const validationResult = opts.validator?.validate?.(value);
       setValue(name, value);
       setErrors({
         ...errors,
         [name]:
-          validationResult === false ? opts.validate?.message ?? `${name} invalid` : undefined,
+          validationResult === false ? opts.validator?.message ?? `${name} invalid` : undefined,
       });
     },
     error: opts.muiHelpers?.includes('error') === true ? errors[name] !== void 0 : undefined,
