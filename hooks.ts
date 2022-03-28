@@ -11,6 +11,7 @@ export type UseForm<F extends Record<string, unknown>> = {
     onChange: ChangeEventHandler<HTMLInputElement>;
   };
   errors: Partial<Record<keyof F, string>>;
+  isValid: boolean;
 };
 
 interface FormData<V extends unknown> extends Record<string, V> {}
@@ -41,6 +42,8 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
           validationResult === false ? opts.validate?.message ?? `${name} invalid` : undefined,
       });
     },
+    error: errors[name] !== void 0,
+    helperText: errors[name],
   });
 
   return {
@@ -48,5 +51,6 @@ export const useForm = <F extends FormData<unknown>>(initialValues: F): UseForm<
     setValue,
     field,
     errors,
+    isValid: Object.keys(errors).length === 0,
   };
 };
