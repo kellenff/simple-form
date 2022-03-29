@@ -6,6 +6,7 @@ import {ChangeEvent, useState} from 'react';
 export type UseForm<F extends Record<string, unknown>> = {
   formData: F;
   setValue: <K extends keyof F>(name: K, value: F[K]) => void;
+  setValues: (data: Partial<F>) => void;
   field: <K extends keyof F, V = ChangeEvent<HTMLInputElement>>(
     name: K,
     opts?: FieldOpts<F, K, V>,
@@ -78,6 +79,10 @@ export const useForm = <F extends FormData<unknown>>(
     setFormData({...formData, [name]: value});
   };
 
+  const setValues = (data: Partial<F>) => {
+    setFormData((f) => ({...f, ...data}));
+  };
+
   const field = <K extends keyof F, V = ChangeEvent<HTMLInputElement>>(
     name: K,
     opts: FieldOpts<F, K, V> = {},
@@ -110,5 +115,6 @@ export const useForm = <F extends FormData<unknown>>(
     errors,
     isValid: !Object.values(errors).some((v) => v !== void 0),
     reset,
+    setValues,
   };
 };
