@@ -3,6 +3,8 @@
  */
 import {ChangeEvent, useState} from 'react';
 
+import {applyValidators, FieldValidator, ValidationPair} from './validators';
+
 export type UseForm<F extends Record<string, unknown>> = {
   formData: F;
   setValue: <K extends keyof F>(name: K, value: F[K]) => void;
@@ -19,7 +21,7 @@ export type UseForm<F extends Record<string, unknown>> = {
   reset: (data?: F) => void;
 };
 
-interface FormData<V extends unknown> extends Record<string, V> {}
+export interface FormData<V extends unknown> extends Record<string, V> {}
 
 const isEvent = (v: unknown): v is ChangeEvent => {
   if (
@@ -42,13 +44,8 @@ const isEvent = (v: unknown): v is ChangeEvent => {
   );
 };
 
-export type FieldValidator<F> = {
-  validate: (value: unknown, formData?: F) => boolean;
-  message?: string;
-};
-
 export type FormOpts<F extends FormData<unknown>> = {
-  validators?: Partial<Record<keyof F, FieldValidator<F>[]>>;
+  validators?: Partial<Record<keyof F, FieldValidator<F>[]>> | ReadonlyArray<ValidationPair<F>>;
 };
 
 export type FieldOpts<
@@ -65,15 +62,10 @@ export const useForm = <F extends FormData<unknown>>(
   options?: FormOpts<F>,
 ): UseForm<F> => {
   const [formData, setFormData] = useState<F>(initialValues);
-  const errors: Partial<Record<keyof F, string | undefined>> = Object.entries(
+  const errors: Partial<Record<keyof F, string | undefined>> = applyValidators(
     options?.validators ?? {},
-  ).reduce((acc, [name, validators]) => {
-    const messages = validators?.flatMap(({validate, message}) =>
-      validate(formData[name], formData) ? [] : [message ?? `${name} is invalid`],
-    );
-
-    return {...acc, [name]: messages?.[0]};
-  }, {});
+    formData,
+  );
 
   const setValue = <K extends keyof F>(name: K, value: F[K]): void => {
     setFormData({...formData, [name]: value});
