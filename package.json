@@ -1,6 +1,6 @@
 {
   "name": "@rakenodiax/simple-form",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "packageManager": "yarn@3.2.0",
   "files": [
     "hooks.ts",
@@ -20,7 +20,7 @@
     "pre-commit:lint": "lint-staged"
   },
   "peerDependencies": {
-    "react": "^17.0.2"
+    "react": "^17.0.2 || ^18.0.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
